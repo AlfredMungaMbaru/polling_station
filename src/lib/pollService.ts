@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient'
+import { VotingService, VoteSubmissionResult } from './votingService'
 
 // Types for poll data
 export interface Poll {
@@ -54,30 +55,22 @@ export class PollService {
   }
 
   /**
-   * Submit a vote for a poll
-   * TODO: Replace with actual Supabase mutation
+   * Submit a vote for a poll using the new VotingService
+   * 
+   * @param pollId - ID of the poll
+   * @param optionId - ID of the selected option
+   * @param userId - ID of the voting user
+   * @returns Promise<VoteSubmissionResult> - Detailed result of vote submission
    */
-  static async submitVote(pollId: string, optionId: string, userId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Placeholder - will be replaced with:
-      // const { error } = await supabase
-      //   .from('poll_votes')
-      //   .insert({
-      //     poll_id: pollId,
-      //     option_id: optionId,
-      //     user_id: userId,
-      //   })
-      
-      console.log('TODO: Submit vote to Supabase:', { pollId, optionId, userId })
-      
-      // Simulate successful vote submission
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      return { success: true }
-    } catch (error) {
-      console.error('Error submitting vote:', error)
-      return { success: false, error: 'Failed to submit vote' }
-    }
+  static async submitVote(pollId: string, optionId: string, userId: string): Promise<VoteSubmissionResult> {
+    console.log('Submitting vote via VotingService:', { pollId, optionId, userId })
+    
+    // Use the new VotingService for robust vote submission
+    return await VotingService.submitVote({
+      pollId,
+      optionId,
+      userId
+    })
   }
 
   /**
