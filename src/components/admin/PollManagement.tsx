@@ -167,7 +167,7 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onEdit, onDelete, onView }) =
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the poll
-              "{poll.title}" and all associated votes.
+              &ldquo;{poll.title}&rdquo; and all associated votes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

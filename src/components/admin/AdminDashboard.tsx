@@ -9,7 +9,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, BarChart3, Users, Settings, Edit, Trash2, Eye } from 'lucide-react'
+import { Plus, BarChart3, Users, Settings, Edit, Eye } from 'lucide-react'
 import { CreatePollDialog } from './CreatePollDialog'
 import { PollManagement } from './PollManagement'
 import { AdminStats } from './AdminStats'
@@ -75,14 +75,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ className }) => 
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">New poll created</p>
-                      <p className="text-sm text-gray-600">"Best Programming Language 2024"</p>
+                      <p className="text-sm text-gray-600">&ldquo;Best Programming Language 2024&rdquo;</p>
                     </div>
                     <span className="text-xs text-gray-500">2 hours ago</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">Poll completed</p>
-                      <p className="text-sm text-gray-600">"Favorite Coffee Type" - 147 votes</p>
+                      <p className="text-sm text-gray-600">&ldquo;Favorite Coffee Type&rdquo; - 147 votes</p>
                     </div>
                     <span className="text-xs text-gray-500">5 hours ago</span>
                   </div>

@@ -9,7 +9,7 @@ export const MOCK_POLLS = {
       { id: 'py', label: 'Python', votes: 38 },
       { id: 'ts', label: 'TypeScript', votes: 52 },
     ],
-    totalVotes: 135,
+    totalVotes: 135 as number,
     createdAt: '2025-09-20T10:00:00Z',
     isActive: true,
   },
@@ -22,7 +22,7 @@ export const MOCK_POLLS = {
       { id: 'remix', label: 'Remix', votes: 23 },
       { id: 'vite', label: 'Vite + React', votes: 41 },
     ],
-    totalVotes: 131,
+    totalVotes: 131 as number,
     createdAt: '2025-09-19T14:30:00Z',
     isActive: true,
   },
@@ -36,11 +36,24 @@ export const MOCK_POLLS = {
       { id: 'aws', label: 'AWS', votes: 28 },
       { id: 'railway', label: 'Railway', votes: 19 },
     ],
-    totalVotes: 170,
+    totalVotes: 170 as number,
     createdAt: '2025-09-18T09:15:00Z',
     isActive: true,
   },
-} as const
+}
 
-export type Poll = typeof MOCK_POLLS[keyof typeof MOCK_POLLS]
+export type Poll = {
+  id: string
+  question: string
+  description: string
+  options: Array<{
+    id: string
+    label: string
+    votes: number
+  }>
+  totalVotes: number
+  createdAt: string
+  isActive: boolean
+}
+
 export type PollOption = Poll['options'][0]
