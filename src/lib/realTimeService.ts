@@ -583,6 +583,158 @@ export class RealTimeService extends EventEmitter {
     }
   }
 
+  // ============================================================================
+  // PERFORMANCE OPTIMIZATION METHODS
+  // ============================================================================
+
+  /**
+   * Get performance metrics for the real-time system
+   * 
+   * @returns Performance metrics object
+   */
+  getPerformanceMetrics() {
+    const totalConnections = this.connections.size
+    const totalPolls = this.pollData.size
+    const activePolls = Array.from(this.pollConnections.keys()).filter(pollId => 
+      this.pollConnections.get(pollId)!.size > 0
+    ).length
+    
+    const totalPendingUpdates = Array.from(this.pendingUpdates.values())
+      .reduce((sum, updates) => sum + updates.length, 0)
+    
+    const memoryUsage = {
+      connections: totalConnections,
+      pollData: this.pollData.size,
+      connectionStatus: this.connectionStatus.size,
+      heartbeats: this.heartbeatIntervals.size,
+      pendingUpdates: totalPendingUpdates,
+      throttles: this.updateThrottles.size
+    }
+
+    return {
+      totalConnections,
+      totalPolls,
+      activePolls,
+      totalPendingUpdates,
+      memoryUsage,
+      timestamp: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Optimize connections by removing stale ones
+   * 
+   * @param maxIdleTime - Maximum idle time in milliseconds (default: 5 minutes)
+   */
+  optimizeConnections(maxIdleTime: number = 300000): void {
+    const now = Date.now()
+    const staleConnections: string[] = []
+
+    // Find stale connections
+    for (const [connectionId, status] of this.connectionStatus.entries()) {
+      const lastHeartbeat = new Date(status.lastHeartbeat).getTime()
+      if (now - lastHeartbeat > maxIdleTime) {
+        staleConnections.push(connectionId)
+      }
+    }
+
+    // Remove stale connections
+    for (const connectionId of staleConnections) {
+      const eventSource = this.connections.get(connectionId)
+      if (eventSource) {
+        eventSource.close()
+      }
+
+      // Clean up all related data
+      this.connections.delete(connectionId)
+      this.connectionStatus.delete(connectionId)
+      
+      const heartbeat = this.heartbeatIntervals.get(connectionId)
+      if (heartbeat) {
+        clearInterval(heartbeat)
+        this.heartbeatIntervals.delete(connectionId)
+      }
+
+      // Remove from poll connections
+      for (const [pollId, connectionIds] of this.pollConnections.entries()) {
+        connectionIds.delete(connectionId)
+        if (connectionIds.size === 0) {
+          this.pollConnections.delete(pollId)
+        }
+      }
+
+      console.log(`Removed stale connection: ${connectionId}`)
+    }
+
+    console.log(`Connection optimization complete. Removed ${staleConnections.length} stale connections.`)
+  }
+
+  /**
+   * Set throttle interval for updates (performance tuning)
+   * 
+   * @param interval - Throttle interval in milliseconds
+   */
+  setThrottleInterval(interval: number): void {
+    if (interval < 10 || interval > 5000) {
+      throw new Error('Throttle interval must be between 10ms and 5000ms')
+    }
+    
+    // Type assertion to modify readonly property for configuration
+    ;(this as any).THROTTLE_INTERVAL = interval
+    console.log(`Throttle interval set to ${interval}ms`)
+  }
+
+  /**
+   * Set maximum batch size for update processing
+   * 
+   * @param size - Maximum batch size
+   */
+  setMaxBatchSize(size: number): void {
+    if (size < 1 || size > 100) {
+      throw new Error('Batch size must be between 1 and 100')
+    }
+    
+    // Type assertion to modify readonly property for configuration
+    ;(this as any).MAX_BATCH_SIZE = size
+    console.log(`Max batch size set to ${size}`)
+  }
+
+  /**
+   * Clear pending updates for a specific poll (emergency cleanup)
+   * 
+   * @param pollId - ID of the poll to clear updates for
+   */
+  clearPendingUpdates(pollId: string): void {
+    this.pendingUpdates.delete(pollId)
+    
+    const throttle = this.updateThrottles.get(pollId)
+    if (throttle) {
+      clearTimeout(throttle)
+      this.updateThrottles.delete(pollId)
+    }
+
+    console.log(`Cleared pending updates for poll: ${pollId}`)
+  }
+
+  /**
+   * Force process all pending updates immediately (emergency flush)
+   */
+  async flushAllPendingUpdates(): Promise<void> {
+    const pollIds = Array.from(this.pendingUpdates.keys())
+    
+    // Clear all throttles
+    for (const throttle of this.updateThrottles.values()) {
+      clearTimeout(throttle)
+    }
+    this.updateThrottles.clear()
+
+    // Process all pending updates
+    const promises = pollIds.map(pollId => this.processPendingUpdates(pollId))
+    await Promise.all(promises)
+
+    console.log(`Flushed pending updates for ${pollIds.length} polls`)
+  }
+
   /**
    * Cleanup all connections and intervals
    */
@@ -597,12 +749,19 @@ export class RealTimeService extends EventEmitter {
       clearInterval(interval)
     }
 
+    // Clear all throttles
+    for (const throttle of this.updateThrottles.values()) {
+      clearTimeout(throttle)
+    }
+
     // Clear all data
     this.connections.clear()
     this.connectionStatus.clear()
     this.heartbeatIntervals.clear()
     this.pollData.clear()
     this.pollConnections.clear()
+    this.updateThrottles.clear()
+    this.pendingUpdates.clear()
 
     console.log('RealTimeService cleaned up')
   }
