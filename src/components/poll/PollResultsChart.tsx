@@ -41,7 +41,8 @@ interface ChartDataPoint {
   percentage: number
   color: string
   isUserChoice: boolean
-  [key: string]: any // Add index signature for Recharts compatibility
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any // Index signature for Recharts compatibility
 }
 
 type ChartType = 'bar' | 'pie' | 'radial'
