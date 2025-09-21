@@ -1,5 +1,8 @@
 'use client'
 
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
@@ -8,10 +11,24 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
+// Form validation schema
+const registerSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+})
+
+type RegisterFormData = z.infer<typeof registerSchema>
+
 export const RegisterForm = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -19,70 +36,36 @@ export const RegisterForm = () => {
   const { signUp } = useAuth()
   const router = useRouter()
 
-  // Basic email validation
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  })
 
-  // Password strength validation
-  const isStrongPassword = (password: string) => {
-    return password.length >= 8 && 
-           /[A-Z]/.test(password) && 
-           /[a-z]/.test(password) && 
-           /[0-9]/.test(password)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Form submission handler
+  const onSubmit = async (data: RegisterFormData) => {
+    setLoading(true)
     setError('')
     setSuccess(false)
-    
-    // Validation
-    if (!email || !password || !confirmPassword) {
-      setError('Please fill in all fields')
-      return
-    }
-    
-    if (!isValidEmail(email)) {
-      setError('Please enter a valid email address')
-      return
-    }
-    
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-    
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-    
-    if (!isStrongPassword(password)) {
-      setError('Password must contain at least 8 characters with uppercase, lowercase, and numbers')
-      return
-    }
 
-    setLoading(true)
-    
     try {
-      const { error } = await signUp(email, password)
+      const { error } = await signUp(data.email, data.password)
       
       if (error) {
-        setError(error.message)
+        setError(typeof error === 'string' ? error : (error as { message?: string })?.message || 'Failed to create account')
       } else {
         setSuccess(true)
-        // Clear form
-        setEmail('')
-        setPassword('')
-        setConfirmPassword('')
-        
-        // Redirect to login after a brief delay
+        reset()
+        // Show success message for a few seconds, then redirect
         setTimeout(() => {
           router.push('/auth/login')
         }, 2000)
       }
     } catch (err) {
+      console.error('Registration error:', err)
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -98,7 +81,7 @@ export const RegisterForm = () => {
               Account Created Successfully!
             </div>
             <p className="text-sm text-gray-600">
-              Please check your email to verify your account. You'll be redirected to the login page shortly.
+              Please check your email to verify your account. You&apos;ll be redirected to the login page shortly.
             </p>
           </div>
         </CardContent>
@@ -114,52 +97,69 @@ export const RegisterForm = () => {
           Enter your information to create a new account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-md bg-red-50 border border-red-200">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          
+          {success && (
+            <div className="p-3 rounded-md bg-green-50 border border-green-200">
+              <p className="text-sm text-green-600">
+                Account created successfully! Redirecting to login...
+              </p>
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register('email')}
               disabled={loading}
-              required
+              className={errors.email ? 'border-red-500' : ''}
             />
+            {errors.email && (
+              <p className="text-sm text-red-600">{errors.email.message}</p>
+            )}
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
-              placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              {...register('password')}
               disabled={loading}
-              required
+              className={errors.password ? 'border-red-500' : ''}
             />
+            {errors.password && (
+              <p className="text-sm text-red-600">{errors.password.message}</p>
+            )}
             <p className="text-xs text-gray-500">
-              Must be at least 8 characters with uppercase, lowercase, and numbers
+              Must be 8+ characters with uppercase, lowercase, and numbers
             </p>
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
               id="confirmPassword"
               type="password"
               placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              {...register('confirmPassword')}
               disabled={loading}
-              required
+              className={errors.confirmPassword ? 'border-red-500' : ''}
             />
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+            )}
           </div>
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
-            </div>
-          )}
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <Button 

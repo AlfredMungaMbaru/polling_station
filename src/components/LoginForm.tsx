@@ -1,5 +1,8 @@
 'use client'
 
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
@@ -8,52 +11,44 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
+// Form validation schema
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
+
 export const LoginForm = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
   const { signIn } = useAuth()
   const router = useRouter()
 
-  // Basic email validation
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
-    // Validation
-    if (!email || !password) {
-      setError('Please fill in all fields')
-      return
-    }
-    
-    if (!isValidEmail(email)) {
-      setError('Please enter a valid email address')
-      return
-    }
-    
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
+  // Form submission handler
+  const onSubmit = async (data: LoginFormData) => {
     setLoading(true)
-    
+    setError('')
+
     try {
-      const { error } = await signIn(email, password)
+      const { error } = await signIn(data.email, data.password)
       
       if (error) {
-        setError(error.message)
+        setError(typeof error === 'string' ? error : (error as { message?: string })?.message || 'Failed to sign in')
       } else {
-        // Redirect to dashboard or home page after successful login
         router.push('/')
       }
     } catch (err) {
+      console.error('Login error:', err)
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -68,54 +63,62 @@ export const LoginForm = () => {
           Enter your email and password to access your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-md bg-red-50 border border-red-200">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register('email')}
               disabled={loading}
-              required
+              className={errors.email ? 'border-red-500' : ''}
             />
+            {errors.email && (
+              <p className="text-sm text-red-600">{errors.email.message}</p>
+            )}
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
               placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register('password')}
               disabled={loading}
-              required
+              className={errors.password ? 'border-red-500' : ''}
             />
+            {errors.password && (
+              <p className="text-sm text-red-600">{errors.password.message}</p>
+            )}
           </div>
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
-            </div>
-          )}
         </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <Button 
-            type="submit" 
-            className="w-full" 
+                <CardFooter className="flex flex-col space-y-4">
+          <Button
+            type="submit"
+            className="w-full"
             disabled={loading}
           >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </Button>
+          
           <p className="text-sm text-center text-gray-600">
-            Don't have an account?{' '}
-            <a 
-              href="/auth/register" 
-              className="text-blue-600 hover:underline"
+            Don&apos;t have an account?{' '}
+            <button
+              type="button"
+              onClick={() => router.push('/auth/register')}
+              className="text-blue-600 hover:underline font-medium"
             >
               Sign up
-            </a>
+            </button>
           </p>
         </CardFooter>
       </form>

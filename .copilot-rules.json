@@ -1,0 +1,27 @@
+{
+  "project": "Polling App",
+  "contextCheck": "Before suggesting code, check existing files and folder structure. Confirm if /app/auth/, /app/polls/, and /lib/supabaseClient.ts exist. Adapt responses to the current project progress.",
+  "rules": [
+    {
+      "id": "folder-structure",
+      "description": "All new pages should be placed under /app/. Authentication pages in /app/auth/, poll-related pages in /app/polls/, API routes in /app/api/."
+    },
+    {
+      "id": "forms",
+      "description": "Use react-hook-form with shadcn/ui components (Input, Button, FormField). Do not use plain HTML forms unless explicitly requested."
+    },
+    {
+      "id": "supabase-auth",
+      "description": "All authentication logic should use supabase.auth methods from /lib/supabaseClient.ts. Do not create new clients unless necessary."
+    },
+    {
+      "id": "supabase-db",
+      "description": "Database operations should go through supabase.from('table') queries, never raw SQL. Keep queries in /app/api/ or /lib/ services."
+    },
+    {
+      "id": "scaffolding",
+      "description": "When scaffolding new features (e.g., creating a poll form), follow existing patterns (AuthContext, shadcn/ui components, folder rules). Always generate minimal, working placeholders before advanced logic."
+    }
+  ]
+}
+

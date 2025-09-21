@@ -19,7 +19,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export type AuthUser = {
   id: string
   email?: string
-  user_metadata?: any
+  user_metadata?: Record<string, unknown>
 }
 
 export type AuthError = {
