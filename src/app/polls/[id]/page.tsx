@@ -18,6 +18,7 @@ import { PollResults } from '@/components/poll/PollResults'
 import { LivePollResults } from '@/components/poll/LivePollResults'
 import { PollNotFound } from '@/components/poll/PollNotFound'
 import { ErrorMessage } from '@/components/poll/ErrorMessage'
+import { CommentList } from '@/components/comments/CommentList'
 
 export default function PollDetailPage() {
   const params = useParams()
@@ -169,6 +170,9 @@ export default function PollDetailPage() {
                 submittedVote={userSubmittedVote}
                 onVoteAgain={handleVoteAgain}
               />
+              
+              {/* Comments Section */}
+              <CommentList pollId={currentPoll.id} />
             </div>
           )}
         </div>
