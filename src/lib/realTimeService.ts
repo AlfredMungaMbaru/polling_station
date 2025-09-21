@@ -88,6 +88,7 @@ export class RealTimeService extends EventEmitter {
   private pollData = new Map<string, LivePollResults>()
   private connectionStatus = new Map<string, ConnectionStatus>()
   private heartbeatIntervals = new Map<string, NodeJS.Timeout>()
+  private pollConnections = new Map<string, Set<string>>() // pollId -> Set of connectionIds
 
   private constructor() {
     super()
@@ -126,6 +127,12 @@ export class RealTimeService extends EventEmitter {
    */
   async subscribeToPoll(config: SSEConnectionConfig): Promise<ConnectionStatus> {
     const { pollId, userId, reconnectInterval = 5000, maxReconnectAttempts = 5 } = config
+    
+    // Validate pollId
+    if (!pollId || pollId.trim() === '') {
+      throw new Error('Poll ID is required and cannot be empty')
+    }
+    
     const connectionId = `${pollId}_${userId || 'anonymous'}_${Date.now()}`
 
     try {
@@ -137,6 +144,12 @@ export class RealTimeService extends EventEmitter {
       
       // Store connection
       this.connections.set(connectionId, eventSource)
+      
+      // Track poll connection
+      if (!this.pollConnections.has(pollId)) {
+        this.pollConnections.set(pollId, new Set())
+      }
+      this.pollConnections.get(pollId)!.add(connectionId)
       
       // Initialize connection status
       const status: ConnectionStatus = {
@@ -185,6 +198,15 @@ export class RealTimeService extends EventEmitter {
         // Clean up tracking
         this.connections.delete(connectionId)
         this.connectionStatus.delete(connectionId)
+        
+        // Remove from poll connections
+        const pollConnections = this.pollConnections.get(pollId)
+        if (pollConnections) {
+          pollConnections.delete(connectionId)
+          if (pollConnections.size === 0) {
+            this.pollConnections.delete(pollId)
+          }
+        }
         
         console.log(`Unsubscribed from poll ${pollId} (connection: ${connectionId})`)
       }
@@ -241,15 +263,10 @@ export class RealTimeService extends EventEmitter {
    * @returns boolean - True if poll has subscribers
    */
   hasActiveSubscribers(pollId: string): boolean {
-    for (const connectionId of this.connections.keys()) {
-      if (connectionId.startsWith(pollId)) {
-        const status = this.connectionStatus.get(connectionId)
-        if (status?.isConnected) {
-          return true
-        }
-      }
-    }
-    return false
+    return (
+      this.pollConnections.has(pollId) &&
+      this.pollConnections.get(pollId)!.size > 0
+    )
   }
 
   // ============================================================================
@@ -484,6 +501,7 @@ export class RealTimeService extends EventEmitter {
     this.connectionStatus.clear()
     this.heartbeatIntervals.clear()
     this.pollData.clear()
+    this.pollConnections.clear()
 
     console.log('RealTimeService cleaned up')
   }
