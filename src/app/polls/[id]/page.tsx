@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { ArrowLeft, Users, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
@@ -77,13 +78,11 @@ export default function PollDetailPage() {
   const pollId = params.id as string
   const poll = MOCK_POLLS[pollId as keyof typeof MOCK_POLLS]
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<VoteFormData>({
+  const form = useForm<VoteFormData>({
     resolver: zodResolver(voteSchema),
+    defaultValues: {
+      optionId: '',
+    },
   })
 
   // Handle vote submission
@@ -110,10 +109,13 @@ export default function PollDetailPage() {
       setSubmittedVote(data.optionId)
       setVoteStatus('voted')
 
+      // Reset the form after successful submission
+      form.reset()
+
       // Auto-show results after thank you message
       setTimeout(() => {
         setVoteStatus('results')
-      }, 2000)
+      }, 3000) // Increased to 3 seconds to show the thank you message longer
 
     } catch (error) {
       console.error('Error submitting vote:', error)
@@ -213,52 +215,62 @@ export default function PollDetailPage() {
                     {user ? 'Select your preferred option below.' : 'Please sign in to vote.'}
                   </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <CardContent className="space-y-4">
-                    {!user && (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                        <p className="text-sm text-blue-700">
-                          You need to be signed in to participate in this poll.{' '}
-                          <Link href="/auth/login" className="font-medium underline">
-                            Sign in here
-                          </Link>
-                        </p>
-                      </div>
-                    )}
-                    
-                    <RadioGroup 
-                      value={watch('optionId')} 
-                      onValueChange={(value) => register('optionId').onChange({ target: { value } })}
-                      disabled={!user}
-                    >
-                      {poll.options.map((option) => (
-                        <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                          <RadioGroupItem 
-                            value={option.id} 
-                            id={option.id}
-                            {...register('optionId')}
-                          />
-                          <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                            {option.label}
-                          </Label>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <CardContent className="space-y-4">
+                      {!user && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                          <p className="text-sm text-blue-700">
+                            You need to be signed in to participate in this poll.{' '}
+                            <Link href="/auth/login" className="font-medium underline">
+                              Sign in here
+                            </Link>
+                          </p>
                         </div>
-                      ))}
-                    </RadioGroup>
-                    
-                    {errors.optionId && (
-                      <p className="text-sm text-red-600">{errors.optionId.message}</p>
-                    )}
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={!user}
-                    >
-                      Submit Vote
-                    </Button>
-                  </CardFooter>
-                </form>
+                      )}
+                      
+                      <FormField
+                        control={form.control}
+                        name="optionId"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel>Select your preferred option:</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={!user}
+                                className="space-y-2"
+                              >
+                                {poll.options.map((option) => (
+                                  <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                                    <RadioGroupItem 
+                                      value={option.id} 
+                                      id={option.id}
+                                    />
+                                    <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                                      {option.label}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={!user}
+                      >
+                        Submit Vote
+                      </Button>
+                    </CardFooter>
+                  </form>
+                </Form>
               </>
             )}
 
@@ -280,9 +292,9 @@ export default function PollDetailPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">Thank you for voting!</h3>
-                    <p className="text-gray-600 mt-2">
-                      Your vote has been recorded. Showing results shortly...
+                    <h3 className="text-2xl font-bold text-green-600 mb-2">Thanks for voting!</h3>
+                    <p className="text-gray-600">
+                      Your vote has been recorded successfully. Showing results shortly...
                     </p>
                   </div>
                 </div>
@@ -334,7 +346,11 @@ export default function PollDetailPage() {
                 <CardFooter className="flex space-x-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => setVoteStatus('voting')}
+                    onClick={() => {
+                      setVoteStatus('voting')
+                      form.reset()
+                      setSubmittedVote(null)
+                    }}
                     className="flex-1"
                   >
                     Vote Again
