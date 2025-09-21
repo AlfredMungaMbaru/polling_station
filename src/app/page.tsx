@@ -80,9 +80,27 @@ export default function Home() {
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-2">Browse Polls</h3>
                 <p className="text-gray-600 mb-4">Participate in existing polls</p>
-                <Button variant="outline" className="w-full">
-                  Coming Soon
-                </Button>
+                <Link href="/polls/1">
+                  <Button variant="outline" className="w-full">
+                    View Sample Poll
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            {/* Test Poll Links */}
+            <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-medium text-blue-900 mb-3">Test Polls (Demo Data)</h4>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/polls/1">
+                  <Button variant="outline" size="sm">Programming Languages</Button>
+                </Link>
+                <Link href="/polls/2">
+                  <Button variant="outline" size="sm">React Frameworks</Button>
+                </Link>
+                <Link href="/polls/3">
+                  <Button variant="outline" size="sm">Deployment Platforms</Button>
+                </Link>
               </div>
             </div>
           </div>
