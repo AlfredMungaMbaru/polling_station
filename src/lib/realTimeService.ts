@@ -680,6 +680,7 @@ export class RealTimeService extends EventEmitter {
     }
     
     // Type assertion to modify readonly property for configuration
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(this as any).THROTTLE_INTERVAL = interval
     console.log(`Throttle interval set to ${interval}ms`)
   }
@@ -695,6 +696,7 @@ export class RealTimeService extends EventEmitter {
     }
     
     // Type assertion to modify readonly property for configuration
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(this as any).MAX_BATCH_SIZE = size
     console.log(`Max batch size set to ${size}`)
   }

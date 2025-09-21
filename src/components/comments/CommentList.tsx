@@ -127,6 +127,7 @@ export const CommentList: React.FC<CommentListProps> = ({
   // Load comments on component mount
   useEffect(() => {
     loadComments()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pollId])
 
   // Set up real-time subscription
@@ -138,6 +139,7 @@ export const CommentList: React.FC<CommentListProps> = ({
     })
 
     return unsubscribe
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pollId])
 
   /**

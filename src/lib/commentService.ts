@@ -287,7 +287,11 @@ export class CommentService {
 
     // Validate content
     if (!payload.content || payload.content.trim().length === 0) {
-      errors.push({ field: 'content', message: 'Comment content is required' })
+      if (!payload.content) {
+        errors.push({ field: 'content', message: 'Comment content is required' })
+      } else if (payload.content.trim().length === 0) {
+        errors.push({ field: 'content', message: 'Comment cannot be only whitespace' })
+      }
     } else if (payload.content.length > 1000) {
       errors.push({ field: 'content', message: 'Comment must be less than 1000 characters' })
     }
