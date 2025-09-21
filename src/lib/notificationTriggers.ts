@@ -28,6 +28,18 @@ interface PollWithVotes extends Poll {
   endsAt?: string
 }
 
+interface VoteRecord {
+  user: string
+  option: string
+  timestamp: string
+}
+
+interface PollOptionWithVotes {
+  id: string
+  label: string
+  votes: number
+}
+
 /**
  * Notification trigger service for poll and comment events
  */
@@ -66,7 +78,7 @@ export class NotificationTriggerService {
               user_name: subscriber,
               hours_remaining: interval.hours,
               current_vote_count: poll.votes?.length || 0,
-              is_user_voted: poll.votes?.some((vote: any) => vote.user === subscriber) || false
+              is_user_voted: poll.votes?.some((vote: VoteRecord) => vote.user === subscriber) || false
             }
 
             const delayMinutes = Math.max(0, Math.floor((reminderTime.getTime() - Date.now()) / (1000 * 60)))
@@ -99,17 +111,17 @@ export class NotificationTriggerService {
       const pollUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/polls/${poll.id}`
       
       // Calculate results
-      const voteCounts = poll.options.map((option: any) => ({
+      const voteCounts = poll.options.map((option: PollOptionWithVotes) => ({
         option: option.label, // Use 'label' instead of 'text'
-        votes: poll.votes?.filter((vote: any) => vote.option === option.id).length || 0
+        votes: poll.votes?.filter((vote: VoteRecord) => vote.option === option.id).length || 0
       }))
 
-      const totalVotes = voteCounts.reduce((sum: number, result: any) => sum + result.votes, 0)
-      const winner = voteCounts.reduce((prev: any, current: any) => 
+      const totalVotes = voteCounts.reduce((sum: number, result: { option: string; votes: number }) => sum + result.votes, 0)
+      const winner = voteCounts.reduce((prev: { option: string; votes: number }, current: { option: string; votes: number }) => 
         current.votes > prev.votes ? current : prev
       ).option
 
-      const results_summary = voteCounts.map((result: any) => ({
+      const results_summary = voteCounts.map((result: { option: string; votes: number }) => ({
         option: result.option,
         votes: result.votes,
         percentage: totalVotes > 0 ? Math.round((result.votes / totalVotes) * 100) : 0
@@ -117,9 +129,9 @@ export class NotificationTriggerService {
 
       // Send notifications to all subscribers
       for (const subscriber of subscribers) {
-        const userVote = poll.votes?.find((vote: any) => vote.user === subscriber)
+        const userVote = poll.votes?.find((vote: VoteRecord) => vote.user === subscriber)
         const userVoteOption = userVote ? 
-          poll.options.find((opt: any) => opt.id === userVote.option)?.label : undefined
+          poll.options.find((opt: PollOptionWithVotes) => opt.id === userVote.option)?.label : undefined
 
         const emailData: PollClosedEmailData = {
           poll_id: poll.id,
@@ -245,7 +257,7 @@ export class NotificationTriggerService {
       // }
 
       // Add voters
-      poll.votes?.forEach((vote: any) => {
+      poll.votes?.forEach((vote: VoteRecord) => {
         if (vote.user) {
           subscribers.add(vote.user)
         }
