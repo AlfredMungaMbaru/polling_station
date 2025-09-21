@@ -126,7 +126,6 @@ const ResultBar = memo(({ option, percentage, isUserChoice }: {
       </span>
     </div>
     <div className="w-full bg-gray-200 rounded-full h-3">
-      {/* eslint-disable-next-line @next/next/no-inline-styles */}
       <div
         className={`h-3 rounded-full transition-all duration-500 ${
           isUserChoice ? 'bg-green-500' : 'bg-blue-500'

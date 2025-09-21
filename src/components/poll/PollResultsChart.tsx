@@ -16,17 +16,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   RadialBarChart,
-  RadialBar,
-  PieLabelRenderProps
+  RadialBar
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BarChart3, PieChart as PieChartIcon, TrendingUp, Zap } from 'lucide-react'
@@ -101,7 +98,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
 /**
  * Custom label function for pie charts
  */
-const renderCustomLabel = (props: any) => {
+const renderCustomLabel = (props: Record<string, unknown>) => {
   const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props
   
   if (!cx || !cy || typeof percent !== 'number' || percent < 0.05) {
@@ -371,7 +368,6 @@ export const PollResultsChart: React.FC<PollResultsChartProps> = ({
                 item.isUserChoice ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
               }`}
             >
-              {/* eslint-disable-next-line react/forbid-dom-props, @next/next/no-inline-styles */}
               <div 
                 className="w-4 h-4 rounded-full flex-shrink-0"
                 style={{ backgroundColor: item.color }}
