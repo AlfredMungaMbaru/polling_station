@@ -336,7 +336,7 @@ export const LivePollResults = memo(({
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Activity</h4>
                 <div className="space-y-1 text-xs text-gray-600">
                   {recentActivity.slice(0, 3).map((event, index) => {
-                    const option = liveResults.options.find(opt => opt.id === event.optionId)
+                    const option = liveResults.options.find((opt: any) => opt.id === event.optionId)
                     return (
                       <div key={index} className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full" />

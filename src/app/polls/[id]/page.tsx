@@ -15,6 +15,7 @@ import { VotingForm } from '@/components/poll/VotingForm'
 import { LoadingState } from '@/components/poll/LoadingState'
 import { ThankYouMessage } from '@/components/poll/ThankYouMessage'
 import { PollResults } from '@/components/poll/PollResults'
+import { LivePollResults } from '@/components/poll/LivePollResults'
 import { PollNotFound } from '@/components/poll/PollNotFound'
 import { ErrorMessage } from '@/components/poll/ErrorMessage'
 
@@ -155,11 +156,20 @@ export default function PollDetailPage() {
           {currentVoteStatus === VOTE_STATUSES.VOTED && <ThankYouMessage />}
 
           {currentVoteStatus === VOTE_STATUSES.RESULTS && (
-            <PollResults
-              poll={currentPoll}
-              submittedVote={userSubmittedVote}
-              onVoteAgain={handleVoteAgain}
-            />
+            <div className="space-y-6">
+              <LivePollResults
+                poll={currentPoll}
+                submittedVote={userSubmittedVote}
+                showDetailedStats={true}
+                autoRefresh={true}
+                refreshInterval={5000}
+              />
+              <PollResults
+                poll={currentPoll}
+                submittedVote={userSubmittedVote}
+                onVoteAgain={handleVoteAgain}
+              />
+            </div>
           )}
         </div>
       </main>
