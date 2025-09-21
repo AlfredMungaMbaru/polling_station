@@ -21,7 +21,7 @@ import {
   PollUpdateEvent, 
   ConnectionStatus,
   createPollUpdateEvent,
-  formatLiveResults 
+  LiveOptionResult
 } from '@/lib/realTimeService'
 import type { LivePollResults as LivePollResultsType } from '@/lib/realTimeService'
 
@@ -115,7 +115,7 @@ export const LivePollResults = memo(({
     setLiveResults((prev: LivePollResultsType | null) => {
       if (!prev) return null
 
-      const updatedOptions = prev.options.map((opt: any) => {
+      const updatedOptions = prev.options.map((opt: LiveOptionResult) => {
         if (opt.id === event.optionId) {
           const previousVotes = opt.votes
           return {
@@ -301,7 +301,7 @@ export const LivePollResults = memo(({
       <CardContent className="space-y-4">
         {/* Live Results Display */}
         <div className="space-y-3">
-          {liveResults.options.map((option: any) => (
+          {liveResults.options.map((option: LiveOptionResult) => (
             <LiveOptionDisplay
               key={option.id}
               option={option}
@@ -336,12 +336,12 @@ export const LivePollResults = memo(({
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Activity</h4>
                 <div className="space-y-1 text-xs text-gray-600">
                   {recentActivity.slice(0, 3).map((event, index) => {
-                    const option = liveResults.options.find((opt: any) => opt.id === event.optionId)
+                    const option = liveResults.options.find((opt: LiveOptionResult) => opt.id === event.optionId)
                     return (
                       <div key={index} className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full" />
                         <span>
-                          Vote for "{option?.label}" • {new Date(event.timestamp).toLocaleTimeString()}
+                          Vote for &ldquo;{option?.label}&rdquo; • {new Date(event.timestamp).toLocaleTimeString()}
                         </span>
                       </div>
                     )

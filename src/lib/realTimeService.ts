@@ -89,6 +89,13 @@ export class RealTimeService extends EventEmitter {
   private connectionStatus = new Map<string, ConnectionStatus>()
   private heartbeatIntervals = new Map<string, NodeJS.Timeout>()
   private pollConnections = new Map<string, Set<string>>() // pollId -> Set of connectionIds
+  
+  // Performance optimization properties
+  private updateThrottles = new Map<string, NodeJS.Timeout>() // pollId -> throttle timeout
+  private pendingUpdates = new Map<string, PollUpdateEvent[]>() // pollId -> pending updates
+  private readonly THROTTLE_INTERVAL = 100 // ms - minimum time between updates
+  private readonly MAX_BATCH_SIZE = 10 // maximum updates to batch together
+  private readonly UPDATE_QUEUE_SIZE = 50 // maximum pending updates per poll
 
   private constructor() {
     super()
@@ -126,7 +133,7 @@ export class RealTimeService extends EventEmitter {
    * ```
    */
   async subscribeToPoll(config: SSEConnectionConfig): Promise<ConnectionStatus> {
-    const { pollId, userId, reconnectInterval = 5000, maxReconnectAttempts = 5 } = config
+    const { pollId, userId } = config
     
     // Validate pollId
     if (!pollId || pollId.trim() === '') {
@@ -238,6 +245,100 @@ export class RealTimeService extends EventEmitter {
   }
 
   /**
+   * Throttled poll update broadcasting with batching
+   * 
+   * @param event - Poll update event data
+   */
+  async broadcastPollUpdateThrottled(event: PollUpdateEvent): Promise<void> {
+    const { pollId } = event
+
+    // Add to pending updates queue
+    if (!this.pendingUpdates.has(pollId)) {
+      this.pendingUpdates.set(pollId, [])
+    }
+    
+    const pending = this.pendingUpdates.get(pollId)!
+    pending.push(event)
+
+    // Limit queue size to prevent memory issues
+    if (pending.length > this.UPDATE_QUEUE_SIZE) {
+      pending.splice(0, pending.length - this.UPDATE_QUEUE_SIZE)
+    }
+
+    // Clear existing throttle
+    const existingThrottle = this.updateThrottles.get(pollId)
+    if (existingThrottle) {
+      clearTimeout(existingThrottle)
+    }
+
+    // Set new throttle
+    const throttleTimeout = setTimeout(() => {
+      this.processPendingUpdates(pollId)
+    }, this.THROTTLE_INTERVAL)
+
+    this.updateThrottles.set(pollId, throttleTimeout)
+  }
+
+  /**
+   * Process pending updates for a poll (batch processing)
+   * 
+   * @private
+   * @param pollId - ID of the poll to process updates for
+   */
+  private async processPendingUpdates(pollId: string): Promise<void> {
+    const pending = this.pendingUpdates.get(pollId)
+    if (!pending || pending.length === 0) return
+
+    try {
+      // Take up to MAX_BATCH_SIZE updates
+      const batchSize = Math.min(pending.length, this.MAX_BATCH_SIZE)
+      const batch = pending.splice(0, batchSize)
+
+      // Process batch - use the latest update for each option
+      const consolidatedUpdates = this.consolidateUpdates(batch)
+
+      // Broadcast consolidated updates
+      for (const update of consolidatedUpdates) {
+        await this.broadcastPollUpdate(update)
+      }
+
+      // Clear throttle
+      this.updateThrottles.delete(pollId)
+
+      // If more updates are pending, schedule another batch
+      if (pending.length > 0) {
+        const throttleTimeout = setTimeout(() => {
+          this.processPendingUpdates(pollId)
+        }, this.THROTTLE_INTERVAL)
+        this.updateThrottles.set(pollId, throttleTimeout)
+      }
+
+    } catch (error) {
+      console.error('Error processing pending updates:', error)
+      this.updateThrottles.delete(pollId)
+    }
+  }
+
+  /**
+   * Consolidate multiple updates into the latest state per option
+   * 
+   * @private
+   * @param updates - Array of poll update events
+   * @returns PollUpdateEvent[] - Consolidated updates
+   */
+  private consolidateUpdates(updates: PollUpdateEvent[]): PollUpdateEvent[] {
+    const latestByOption = new Map<string, PollUpdateEvent>()
+
+    // Keep only the latest update for each option
+    for (const update of updates) {
+      const key = `${update.pollId}-${update.optionId}`
+      latestByOption.set(key, update)
+    }
+
+    return Array.from(latestByOption.values())
+  }
+
+  /**
    * Get current live results for a poll
    * 
    * @param pollId - ID of the poll
@@ -288,7 +389,7 @@ export class RealTimeService extends EventEmitter {
       close: () => {
         console.log(`SSE connection closed: ${connectionId}`)
       },
-      addEventListener: (type: string, handler: (event: any) => void) => {
+      addEventListener: (type: string, handler: (event: MessageEvent) => void) => {
         console.log(`SSE event listener added: ${type} for ${connectionId}`)
       },
       onopen: null,
@@ -487,7 +588,7 @@ export class RealTimeService extends EventEmitter {
    */
   public cleanup(): void {
     // Close all connections
-    for (const [connectionId, eventSource] of this.connections.entries()) {
+    for (const eventSource of this.connections.values()) {
       eventSource.close()
     }
 
