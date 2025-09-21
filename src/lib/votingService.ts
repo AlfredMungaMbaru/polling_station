@@ -56,7 +56,7 @@ export interface VoteSubmissionResult {
   error?: {
     code: string
     message: string
-    details?: Record<string, any>
+    details?: Record<string, unknown>
   }
   metadata?: {
     pollId: string
@@ -123,7 +123,7 @@ export class VotingError extends Error {
   constructor(
     message: string,
     public code: string,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'VotingError'
@@ -134,7 +134,7 @@ export class VotingError extends Error {
  * Error for invalid vote submissions
  */
 export class VoteValidationError extends VotingError {
-  constructor(message: string, details?: Record<string, any>) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'VOTE_VALIDATION_ERROR', details)
     this.name = 'VoteValidationError'
   }
@@ -144,7 +144,7 @@ export class VoteValidationError extends VotingError {
  * Error for duplicate vote attempts
  */
 export class DuplicateVoteError extends VotingError {
-  constructor(message: string, details?: Record<string, any>) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'DUPLICATE_VOTE_ERROR', details)
     this.name = 'DuplicateVoteError'
   }
@@ -154,7 +154,7 @@ export class DuplicateVoteError extends VotingError {
  * Error for inactive or ended polls
  */
 export class PollStateError extends VotingError {
-  constructor(message: string, details?: Record<string, any>) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'POLL_STATE_ERROR', details)
     this.name = 'PollStateError'
   }
@@ -164,7 +164,7 @@ export class PollStateError extends VotingError {
  * Error for database operations
  */
 export class DatabaseError extends VotingError {
-  constructor(message: string, details?: Record<string, any>) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'DATABASE_ERROR', details)
     this.name = 'DatabaseError'
   }
@@ -208,8 +208,7 @@ export class VotingService {
    * ```
    */
   static async submitVote(payload: VoteSubmissionPayload): Promise<VoteSubmissionResult> {
-    const startTime = Date.now()
-    let attemptCount = 1
+    const attemptCount = 1
     
     try {
       // Step 1: Validate input payload
