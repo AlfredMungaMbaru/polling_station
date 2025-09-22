@@ -8,7 +8,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -23,6 +23,7 @@ import { CommentService } from '@/lib/commentService'
 import { CommentForm } from './CommentForm'
 import { CommentItem } from './CommentItem'
 import { Comment, CommentStats } from '@/types/comments'
+import { Heading, LiveRegion, AccessibleButton, VisuallyHidden } from '@/lib/accessibility/components'
 
 type CommentListProps = {
   pollId: string
@@ -172,10 +173,10 @@ export const CommentList: React.FC<CommentListProps> = ({
   const EmptyState = () => (
     <Card>
       <CardContent className="py-12 text-center">
-        <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" aria-hidden="true" />
+        <Heading level={3} className="text-lg font-medium text-gray-900 mb-2">
           No comments yet
-        </h3>
+        </Heading>
         <p className="text-gray-600 mb-6">
           Be the first to share your thoughts on this poll!
         </p>
@@ -205,41 +206,60 @@ export const CommentList: React.FC<CommentListProps> = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Live region for dynamic announcements */}
+      <LiveRegion 
+        announcement={
+          isLoading ? "Loading comments..." :
+          error ? `Error loading comments: ${error}` :
+          isRefreshing ? "Refreshing comments..." :
+          ""
+        } 
+      />
+      
       {/* Comment Section Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
+            <Heading level={2} className="flex items-center gap-2 text-xl">
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
               Discussion
-            </CardTitle>
+            </Heading>
             
             <div className="flex items-center gap-4">
               {stats && (
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-4 text-sm text-gray-600" aria-label="Comment statistics">
                   <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    {stats.total_comments} comments
+                    <Users className="h-4 w-4" aria-hidden="true" />
+                    <span>
+                      <VisuallyHidden>Total comments: </VisuallyHidden>
+                      {stats.total_comments} comments
+                    </span>
                   </div>
                   
                   {stats.latest_comment_at && (
                     <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      Latest activity
+                      <Clock className="h-4 w-4" aria-hidden="true" />
+                      <span>
+                        <VisuallyHidden>Latest activity</VisuallyHidden>
+                        Latest activity
+                      </span>
                     </div>
                   )}
                 </div>
               )}
               
-              <Button
-                variant="ghost"
+              <AccessibleButton
+                variant="secondary"
                 size="sm"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="text-gray-600"
+                loading={isRefreshing}
+                loadingText="Refreshing comments..."
+                aria-label="Refresh comments"
               >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </Button>
+                <RefreshCw className="h-4 w-4" />
+                <VisuallyHidden>Refresh</VisuallyHidden>
+              </AccessibleButton>
             </div>
           </div>
         </CardHeader>
@@ -275,19 +295,25 @@ export const CommentList: React.FC<CommentListProps> = ({
             </div>
 
             {/* Comments */}
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  onReply={handleReply}
-                  onEdit={handleCommentEdit}
-                  onDelete={handleCommentDelete}
-                  onFlag={handleCommentFlag}
-                  maxDepth={3}
-                />
-              ))}
-            </div>
+            <section aria-labelledby="comments-heading">
+              <VisuallyHidden>
+                <Heading level={3} id="comments-heading">Comments list</Heading>
+              </VisuallyHidden>
+              <div className="space-y-4" role="list" aria-label={`${comments.length} comments`}>
+                {comments.map((comment) => (
+                  <div key={comment.id} role="listitem">
+                    <CommentItem
+                      comment={comment}
+                      onReply={handleReply}
+                      onEdit={handleCommentEdit}
+                      onDelete={handleCommentDelete}
+                      onFlag={handleCommentFlag}
+                      maxDepth={3}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
           </>
         )}
       </div>

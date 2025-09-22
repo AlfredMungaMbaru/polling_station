@@ -126,7 +126,7 @@ export default function PollDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <PollNavigation />
       
-      <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main id="main-content" className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
           <PollHeader poll={currentPoll} />
           
