@@ -7,6 +7,7 @@ import { BarChart3, List } from 'lucide-react'
 import { Poll } from '@/data/mockPolls'
 import { usePollCalculations } from '@/hooks/usePollCalculations'
 import { PollResultsChart } from './PollResultsChart'
+import { QRCodeSharing } from './QRCodeSharing'
 
 interface PollResultsProps {
   poll: Poll
@@ -24,7 +25,6 @@ export const PollResults = memo(({ poll, submittedVote, onVoteAgain }: PollResul
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <Card>
         <CardHeader>
           <CardTitle>Poll Results</CardTitle>
@@ -39,7 +39,6 @@ export const PollResults = memo(({ poll, submittedVote, onVoteAgain }: PollResul
         </CardHeader>
       </Card>
 
-      {/* Results Visualization */}
       <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'list' | 'chart')}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="list" className="flex items-center gap-2">
@@ -64,31 +63,8 @@ export const PollResults = memo(({ poll, submittedVote, onVoteAgain }: PollResul
                 />
               ))}
             </CardContent>
-            <CardFooter className="flex space-x-4">
-              <Button 
-                variant="outline" 
-                onClick={onVoteAgain}
-                className="flex-1"
-              >
-                Vote Again
-              </Button>
-              <Link href="/" className="flex-1">
-                <Button className="w-full">
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="chart">
-          <div className="space-y-4">
-            <PollResultsChart 
-              poll={poll} 
-              submittedVote={submittedVote}
-            />
-            <Card>
-              <CardFooter className="flex space-x-4 pt-6">
+            <CardFooter className="flex flex-col space-y-4 pt-6">
+              <div className="flex space-x-4 w-full">
                 <Button 
                   variant="outline" 
                   onClick={onVoteAgain}
@@ -101,6 +77,41 @@ export const PollResults = memo(({ poll, submittedVote, onVoteAgain }: PollResul
                     Back to Dashboard
                   </Button>
                 </Link>
+              </div>
+              <QRCodeSharing 
+                poll={poll}
+                variant="compact"
+              />
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="chart">
+          <div className="space-y-4">
+            <PollResultsChart 
+              poll={poll} 
+              submittedVote={submittedVote}
+            />
+            <Card>
+              <CardFooter className="flex flex-col space-y-4 pt-6">
+                <div className="flex space-x-4 w-full">
+                  <Button 
+                    variant="outline" 
+                    onClick={onVoteAgain}
+                    className="flex-1"
+                  >
+                    Vote Again
+                  </Button>
+                  <Link href="/" className="flex-1">
+                    <Button className="w-full">
+                      Back to Dashboard
+                    </Button>
+                  </Link>
+                </div>
+                <QRCodeSharing 
+                  poll={poll}
+                  variant="compact"
+                />
               </CardFooter>
             </Card>
           </div>
@@ -110,36 +121,33 @@ export const PollResults = memo(({ poll, submittedVote, onVoteAgain }: PollResul
   )
 })
 
-// Extracted result bar component for better maintainability
 const ResultBar = memo(({ option, percentage, isUserChoice }: {
   option: { id: string; label: string; votes: number }
   percentage: number
   isUserChoice: boolean
-}) => (
-  <div className="space-y-2">
-    <div className="flex justify-between items-center">
-      <span className={`font-medium ${isUserChoice ? 'text-green-600' : 'text-gray-900'}`}>
-        {option.label} {isUserChoice && '✓'}
-      </span>
-      <span className="text-sm text-gray-500">
-        {option.votes} votes ({percentage}%)
-      </span>
+}) => {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className={`font-medium ${isUserChoice ? 'text-green-600' : 'text-gray-900'}`}>
+          {option.label} {isUserChoice && '✓'}
+        </span>
+        <span className="text-sm text-gray-500">
+          {option.votes} votes ({percentage}%)
+        </span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-3">
+        <div
+          className={`h-3 rounded-full transition-all duration-500 ${
+            isUserChoice ? 'bg-green-500' : 'bg-blue-500'
+          }`}
+          style={{ width: `${percentage}%` }}
+          aria-label={`${option.label}: ${percentage}% of votes`}
+        />
+      </div>
     </div>
-    <div className="w-full bg-gray-200 rounded-full h-3">
-      <div
-        className={`h-3 rounded-full transition-all duration-500 ${
-          isUserChoice ? 'bg-green-500' : 'bg-blue-500'
-        }`}
-        style={{ width: `${percentage}%` }}
-        role="progressbar"
-        aria-valuenow={Number(percentage)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${option.label}: ${percentage}% of votes`}
-      />
-    </div>
-  </div>
-))
+  )
+})
 
 PollResults.displayName = 'PollResults'
 ResultBar.displayName = 'ResultBar'

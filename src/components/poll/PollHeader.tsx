@@ -4,6 +4,7 @@ import { Users, Calendar } from 'lucide-react'
 import { Poll } from '@/data/mockPolls'
 import { usePollCalculations } from '@/hooks/usePollCalculations'
 import { Heading, VisuallyHidden } from '@/lib/accessibility/components'
+import { QRCodeSharing } from '@/components/poll/QRCodeSharing'
 
 interface PollHeaderProps {
   poll: Poll
@@ -24,21 +25,25 @@ export const PollHeader = memo(({ poll }: PollHeaderProps) => {
               </CardDescription>
             )}
           </div>
-          <div className="flex items-center space-x-4 text-sm text-gray-500" aria-label="Poll statistics">
-            <div className="flex items-center">
-              <Users className="mr-1 h-4 w-4" aria-hidden="true" />
-              <span>
-                <VisuallyHidden>Total votes: </VisuallyHidden>
-                {poll.totalVotes} votes
-              </span>
+          <div className="flex items-center space-x-4" aria-label="Poll statistics and actions">
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Users className="mr-1 h-4 w-4" aria-hidden="true" />
+                <span>
+                  <VisuallyHidden>Total votes: </VisuallyHidden>
+                  {poll.totalVotes} votes
+                </span>
+              </div>
+              <div className="flex items-center">
+                <Calendar className="mr-1 h-4 w-4" aria-hidden="true" />
+                <span>
+                  <VisuallyHidden>Created on: </VisuallyHidden>
+                  {formattedCreatedDate}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center">
-              <Calendar className="mr-1 h-4 w-4" aria-hidden="true" />
-              <span>
-                <VisuallyHidden>Created on: </VisuallyHidden>
-                {formattedCreatedDate}
-              </span>
-            </div>
+            {/* QR Code Sharing */}
+            <QRCodeSharing poll={poll} variant="compact" size="sm" />
           </div>
         </div>
       </CardHeader>
